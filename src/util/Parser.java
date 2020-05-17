@@ -1,53 +1,49 @@
 package util;
 
-import game.Game;
 import javafx.util.Pair;
 import piece.Piece;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 
 public class Parser {
 
-    public static ArrayList<String> readPGN(Game game, ChessBoard board, int gameToLoad) {
-        try {
-            List<String> lines = Files.readAllLines(Paths.get("src/Tal.pgn"));
-            StringBuilder sb = new StringBuilder();
-            lines.forEach(e -> sb.append(e.replaceAll("\\.", ". ") + "\n"));
+    public static ArrayList<String> readPositionPGN(String str) {
+        str = str.replaceAll("\\.", ". ");
+        String[] split = str.split("\\s+");
 
-            String content = sb.toString();
-
-            //System.out.println(content);
-
-            String[] split = content.split("\\s+");
-
-            int start = 0;
-
-            for (int i=0;i<=gameToLoad;i++) {
-                if (i != 0)
+        int start = 0;
+        if (str.contains(" 1.") || str.contains("\n1.")) {
+            System.out.println("Contains these conditions");
+            while (!split[start].startsWith("1."))
+                start++;
+        } else {
+            while (start < split.length) {
+                ChessBoard cb = new ChessBoard();
+                cb.addPieces(Piece.getStandardGamePieces());
+                Object[] arr;
+                try {
+                    String reformat = reformat(split[start], cb, true, "Pf9f9");
+                    POS startClickPos = new POS(reformat.substring(0, 2));
+                    POS endClickPos = new POS(reformat.substring(2, 4));
+                    Piece piece = cb.getPiece(startClickPos);
+                    arr = Rule.isValidMove(piece, endClickPos, cb, "Pf9f9", false);
+                    if ((boolean)arr[0])
+                        break;
+                } catch (Exception e) {
                     start++;
-                while (!split[start].equals("1."))
-                    start++;
+                }
             }
-
-            int resultIndex = start;
-            while (!(split[resultIndex].equals("1-0") || split[resultIndex].equals("0-1") || split[resultIndex].equals("1/2-1/2")))
-                resultIndex++;
-
-            ArrayList<String> moves = new ArrayList<>();
-            for (int i = start; i < resultIndex; i++) {
-                if (!split[i].contains("."))
-                    moves.add(split[i]);
-            }
-            moves.add("Result: " + split[resultIndex]);
-            return moves;
-            //System.out.println("Result: " + split[resultIndex]);
-        } catch (Exception e) {
-            System.out.println("Caught exception " + e.getMessage());
-            return null;
         }
+        int end = start;
+        while (end < split.length && !split[end].contains("1-0") && !split[end].contains("0-1") && !split[end].contains("1/2-1/2"))
+            end++;
+        ArrayList<String> moves = new ArrayList<>();
+        for (int i=start;i<end;i++)
+            if (!split[i].contains("."))
+                moves.add(split[i]);
+        if (end < split.length && (split[end].contains("1-0") || split[end].contains("0-1") || split[end].contains("1/2-1/2")))
+            moves.add("Result: " + split[end]);
+        return moves;
     }
 
     public static String reformat(String str, ChessBoard board, boolean white, String lastMove) {
@@ -137,7 +133,6 @@ public class Parser {
             try {
                 requiredRank = Integer.parseInt(str);
             } catch (Exception e) {
-                requiredRank = -1;
                 requiredChar = str.charAt(0);
             }
         }

@@ -3,14 +3,15 @@ package game;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -19,10 +20,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.util.Pair;
 import piece.*;
-import util.ChessBoard;
-import util.POS;
-import util.Parser;
-import util.Rule;
+import util.*;
 
 import java.util.ArrayList;
 
@@ -54,48 +52,18 @@ public class Game extends Application {
 
     private TextField inputField = new TextField();
 
-    private Button loadPGN = new Button("Load PGN");
+    private Button replayPosition = new Button("Replay Position");
+    private Button draw = new Button("Draw the Game");
+    private Button newGame = new Button("New Game");
+    private Button loadPosition = new Button("Load Position");
 
     private int gameToLoad = 600;
     private int loadIndex = 0;
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
 
-        loadPGN.setOnAction(e -> {
-            board = new ChessBoard();
-            board.addPieces(Piece.getStandardGamePieces());
-            updateStackPanes();
-            ArrayList<String> moves = Parser.readPGN(this, board, gameToLoad);
-            gameToLoad++;
-            loadIndex = 0;
-            white = true;
-            Timeline tl = new Timeline(new KeyFrame(Duration.millis(200), ae -> {
-                System.out.println(moves.get(loadIndex));
-                attemptMove(Parser.reformat(moves.get(loadIndex), board, white, lastMove));
-                loadIndex++;
-                updateClickedPane();
-                updateStackPanes();
-            }));
-            tl.setCycleCount(moves.size() - 1);
-            tl.play();
-            tl.setOnFinished(ef -> System.out.println(moves.get(moves.size() - 1)));
-        });
-        loadPGN.setLayoutX(75);
-        loadPGN.setLayoutY(710);
-        loadPGN.setFont(new Font(20));
-        pane.getChildren().add(loadPGN);
-
-        inputField.setLayoutX(75);
-        inputField.setLayoutY(710);
-        inputField.setFont(new Font(20));
-        inputField.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                attemptMove(Parser.reformat(inputField.getText(), board, white, lastMove));
-                inputField.setText("");
-            }
-        });
-        //pane.getChildren().add(inputField);
+        initButtons();
 
         boardLabels = new StackPane[16];
         for (int i=0;i<8;i++) {
@@ -148,6 +116,140 @@ public class Game extends Application {
         stage.show();
     }
 
+    private void initButtons() {
+        draw.setOnAction(e -> {
+            System.out.println("Game ended in a draw by pressing the draw button!");
+            gameMoves.add("1/2-1/2");
+            scene.setOnMousePressed(ef -> {});
+            scene.setOnMouseDragged(ef -> {});
+            scene.setOnMouseMoved(ef -> {});
+            scene.setOnMouseReleased(ef -> {});
+            SaveGame.save(gameMoves);
+        });
+        draw.setLayoutX(275);
+        draw.setLayoutY(710);
+        draw.setFont(new Font(20));
+
+        newGame.setOnAction(e -> {
+            lastMove = "Pf9f9";
+            pieceInCheckPos = null;
+            white = true;
+            board = new ChessBoard();
+            board.addPieces(Piece.getStandardGamePieces());
+            updateClickedPane();
+            updateStackPanes();
+            gameMoves.clear();
+            initSceneHandler();
+        });
+        newGame.setLayoutX(575);
+        newGame.setLayoutY(710);
+        newGame.setFont(new Font(20));
+
+        loadPosition.setOnAction(e -> {
+            gameMoves.clear();
+            lastMove = "Pf9f9";
+            board = new ChessBoard();
+            white = true;
+            board.addPieces(Piece.getStandardGamePieces());
+            Stage popup = new Stage();
+            Label lbl = new Label("Input moves leading up to this position: ");
+            lbl.setFont(new Font(20));
+            TextArea textArea = new TextArea();
+            Button submit = new Button("Submit");
+            submit.setOnAction(ff -> {
+                loadPositionHelperFunc(textArea.getText());
+                popup.close();
+            });
+            VBox vb = new VBox();
+            vb.setSpacing(20);
+            vb.setPadding(new Insets(10));
+            vb.setAlignment(Pos.CENTER);
+            vb.getChildren().addAll(lbl, textArea, submit);
+            popup.initModality(Modality.APPLICATION_MODAL);
+            Scene sc = new Scene(vb, 500, 500);
+            popup.setScene(sc);
+            popup.show();
+        });
+        loadPosition.setLayoutX(75);
+        loadPosition.setLayoutY(0);
+        loadPosition.setFont(new Font(20));
+
+        replayPosition.setOnAction(e -> {
+            gameMoves.clear();
+            lastMove = "Pf9f9";
+            board = new ChessBoard();
+            white = true;
+            board.addPieces(Piece.getStandardGamePieces());
+            updateStackPanes();
+            Stage popup = new Stage();
+            Label lbl = new Label("Input moves leading up to this position: ");
+            lbl.setFont(new Font(20));
+            TextArea textArea = new TextArea();
+            Button submit = new Button("Submit");
+            submit.setOnAction(ff -> {
+                replayPositionPlayBack(textArea.getText());
+                popup.close();
+            });
+            VBox vb = new VBox();
+            vb.setSpacing(20);
+            vb.setPadding(new Insets(10));
+            vb.setAlignment(Pos.CENTER);
+            vb.getChildren().addAll(lbl, textArea, submit);
+            popup.initModality(Modality.APPLICATION_MODAL);
+            Scene sc = new Scene(vb, 500, 500);
+            popup.setScene(sc);
+            popup.show();
+        });
+        replayPosition.setLayoutX(75);
+        replayPosition.setLayoutY(710);
+        replayPosition.setFont(new Font(20));
+
+        HBox hb = new HBox();
+        hb.getChildren().addAll(loadPosition, replayPosition, draw, newGame);
+        hb.setSpacing(15);
+        hb.setAlignment(Pos.CENTER);
+        hb.setLayoutX(0);
+        hb.setLayoutY(25);
+        hb.setMinWidth(750);
+        pane.getChildren().add(hb);
+    }
+
+    private void loadPositionHelperFunc(String str) {
+        lastMove = "Pf9f9";
+        ArrayList<String> moves = Parser.readPositionPGN(str);
+        String result = "";
+        if (moves.size() > 1) {
+            result = moves.get(moves.size() - 1);
+            if (result.contains("Result: "))
+                moves.remove(moves.size() - 1);
+        }
+        System.out.println(moves);
+        for (String move : moves)
+            attemptMove(Parser.reformat(move, board, white, lastMove));
+        updateClickedPane();
+        updateStackPanes();
+        if (result.contains("Result: ")) {
+            System.out.println(result);
+        }
+    }
+
+    private void replayPositionPlayBack(String str) {
+        lastMove = "Pf9f9";
+        ArrayList<String> moves = Parser.readPositionPGN(str);
+        loadIndex = 0;
+        Timeline tl = new Timeline(new KeyFrame(Duration.millis(1000), ae -> {
+            attemptMove(Parser.reformat(moves.get(loadIndex), board, white, lastMove));
+            loadIndex++;
+            updateClickedPane();
+            updateStackPanes();
+        }));
+        tl.setCycleCount(moves.size() - 1);
+        tl.play();
+        String result = moves.remove(moves.size() - 1);
+        System.out.println(moves);
+        tl.setOnFinished(ef -> System.out.println(result));
+    }
+
     private void initSceneHandler() {
         scene.setOnMousePressed(e -> {
             if (startClick == null) {
@@ -162,10 +264,8 @@ public class Game extends Application {
             updateClickedPane();
         });
         scene.setOnMouseReleased(e -> {
-            if (startClick != null &&
-                    Math.abs(startClick.getValue() - e.getSceneY()) < 3 &&
-                    Math.abs(startClick.getKey() - e.getSceneX()) < 3) {
-            } else if (startClick != null) {
+            if (startClick != null && !(Math.abs(startClick.getValue() - e.getSceneY()) < 3 &&
+                    Math.abs(startClick.getKey() - e.getSceneX()) < 3)) {
                 endClick = new Pair<>(e.getSceneX(), e.getSceneY());
                 attemptMove();
                 removeHoveringPiece();
@@ -249,21 +349,24 @@ public class Game extends Application {
             if (startClickPos.equals(endClickPos)) {
                 System.out.println("Nullified 2 clicks on " + startClickPos + " and " + endClickPos);
             } else {
-                if (command.length == 0)
-                    System.out.println("Moving from " + startClickPos + " to " + endClickPos);
-
 
                 Piece movingPiece = board.getPiece(startClickPos);
                 Object[] ruleCheck = Rule.isValidMove(movingPiece, endClickPos, board, lastMove);
                 if ((boolean) ruleCheck[0]) {
+                    white = !white;
                     lastMove = board.getPiece(startClickPos).symbol() + startClickPos + endClickPos;
                     Pair<Piece, POS>[] movingDirections = (Pair<Piece, POS>[]) ruleCheck[1];
                     Pair<Piece, POS>[] removedPieces = (Pair<Piece, POS>[]) ruleCheck[2];
                     Pair<Piece, POS> addedPiece = (Pair<Piece, POS>) ruleCheck[3];
 
+                    commitChanges(removedPieces, movingDirections, addedPiece);
                     //Promotion
                     if (movingPiece.isWhite() && movingPiece.isPawn() && endClickPos.getRank() == 8 ||
                             movingPiece.isBlack() && movingPiece.isPawn() && endClickPos.getRank() == 1) {
+                        movingDirections[0] = null;
+                        movingDirections[1] = null;
+                        removedPieces[0] = null;
+                        removedPieces[1] = null;
 
                         if (command.length != 0) {
                             removedPieces[1] = new Pair<>(movingPiece, startClickPos);
@@ -271,7 +374,6 @@ public class Game extends Application {
                             Pair<Piece, POS> addPiece;
                             try {
                                 char c = command[0].charAt(5);
-
                                 if (c == 'Q') {
                                     addPiece = new Pair<>(new Queen(movingPiece.isWhite()), endClickPos);
                                 } else if (c == 'R') {
@@ -331,8 +433,6 @@ public class Game extends Application {
                             popup.setScene(newScene);
                             popup.show();
                         }
-                    } else {
-                        commitChanges(removedPieces, movingDirections, addedPiece);
                     }
 
                 } else {
@@ -365,15 +465,22 @@ public class Game extends Application {
             lastMove += "=" + addedPiece.getKey().symbol();
         }
 
-        white = !white;
         updateStackPanes();
 
         pieceInCheckPos = null;
 
-        if (Rule.isInCheck(true, lastMove, board)) {
+        //Game end checking
+        if (Rule.drawByInsufficientMaterial(board)) {
+            System.out.println("Draw by Insufficient Material!");
+            gameMoves.add("1/2-1/2");
+            scene.setOnMousePressed(e -> {});
+            scene.setOnMouseDragged(e -> {});
+            scene.setOnMouseMoved(e -> {});
+            scene.setOnMouseReleased(e -> {});
+            SaveGame.save(gameMoves);
+        } else if (Rule.isInCheck(true, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(true);
             if (Rule.hasValidMove(true, lastMove, board)) {
-                System.out.println("White is in check!");
                 gameMoves.add(replaceCastleMoves(lastMove) + "+");
             } else {
                 System.out.println("White is checkmated!");
@@ -383,12 +490,11 @@ public class Game extends Application {
                 scene.setOnMouseDragged(e -> {});
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
-                System.out.println(gameMoves);
+                SaveGame.save(gameMoves);
             }
         } else if (Rule.isInCheck(false, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(false);
             if (Rule.hasValidMove(false, lastMove, board)) {
-                System.out.println("Black is in check!");
                 gameMoves.add(replaceCastleMoves(lastMove) + "+");
             } else {
                 System.out.println("Black is checkmated!");
@@ -398,19 +504,20 @@ public class Game extends Application {
                 scene.setOnMouseDragged(e -> {});
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
-                System.out.println(gameMoves);
+                SaveGame.save(gameMoves);
             }
-        } else if (!Rule.hasValidMove(white, lastMove, board)) {
-            //Stalemate
-            System.out.println("Stalemate!");
-            gameMoves.add("1/2-1/2");
-            scene.setOnMousePressed(e -> {});
-            scene.setOnMouseDragged(e -> {});
-            scene.setOnMouseMoved(e -> {});
-            scene.setOnMouseReleased(e -> {});
-            System.out.println(gameMoves);
         } else {
             gameMoves.add(replaceCastleMoves(lastMove));
+            if (!Rule.hasValidMove(white, lastMove, board)) {
+                //Stalemate
+                System.out.println("Stalemate!");
+                gameMoves.add("1/2-1/2");
+                scene.setOnMousePressed(e -> {});
+                scene.setOnMouseDragged(e -> {});
+                scene.setOnMouseMoved(e -> {});
+                scene.setOnMouseReleased(e -> {});
+                SaveGame.save(gameMoves);
+            }
         }
         updateClickedPane();
     }

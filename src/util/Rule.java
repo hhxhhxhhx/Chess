@@ -224,7 +224,7 @@ public final class Rule {
     private static boolean isSquareTargetableByOpponent(boolean opponent, ChessBoard board, String lastMove, POS...squares) {
         for (POS pos : squares) {
             for (Pair<POS, Piece> pair : board.getAllPieces()) {
-                if (pair.getValue().isWhite() == opponent) {
+                if (pair.getValue() != null && pair.getValue().isWhite() == opponent) {
                     if ((boolean)__isValidMoveWithCheckCheck__(pair.getValue(), pos, board, lastMove, false, false)[0]) {
                         return true;
                     }
@@ -254,6 +254,83 @@ public final class Rule {
             }
         }
         return false;
+    }
+
+    public static boolean drawByInsufficientMaterial(ChessBoard board) {
+
+        ArrayList<Pair<POS, Piece>> pieces = board.getAllPieces();
+        int[] whitePieceCount = new int[5];
+        int[] blackPieceCount = new int[5];
+        for (Pair<POS, Piece> pair : pieces) {
+            if (pair.getValue().isWhite() && !pair.getValue().isKing()) {
+                whitePieceCount[pieceToIndex(pair.getValue())]++;
+            } else if (!pair.getValue().isKing()) {
+                blackPieceCount[pieceToIndex(pair.getValue())]++;
+            }
+        }
+        if (whitePieceCount[0] != 0 || blackPieceCount[0] != 0 || whitePieceCount[1] != 0 || blackPieceCount[1] != 0 ||
+            whitePieceCount[4] != 0 || blackPieceCount[4] != 0)
+            return false;
+        if (arraySum(whitePieceCount) == 0 && arraySum(blackPieceCount) == 0)
+            return true;
+        if (arraySum(whitePieceCount, 2) == 0 && whitePieceCount[2] == 1 && arraySum(blackPieceCount) == 0)
+            return true;
+        if (arraySum(blackPieceCount, 2) == 0 && blackPieceCount[2] == 1 && arraySum(whitePieceCount) == 0)
+            return true;
+        if (arraySum(whitePieceCount, 3) == 0 && whitePieceCount[3] == 1 && arraySum(blackPieceCount) == 0)
+            return true;
+        if (arraySum(blackPieceCount, 3) == 0 && blackPieceCount[3] == 1 && arraySum(whitePieceCount) == 0)
+            return true;
+        if (arraySum(whitePieceCount, 2) == 0 && whitePieceCount[2] == 1 &&
+                arraySum(blackPieceCount, 2) == 0 && blackPieceCount[2] == 1) {
+            Pair<POS, Piece> bishop1 = null;
+            Pair<POS, Piece> bishop2 = null;
+            for (Pair<POS, Piece> pair : pieces) {
+                if (pair.getValue().isBishop() && bishop1 == null)
+                    bishop1 = pair;
+                else if (pair.getValue().isBishop())
+                    bishop2 = pair;
+            }
+            int pos1Sum = bishop1.getKey().getValue() / 10 + bishop1.getKey().getValue() % 10;
+            int pos2Sum = bishop2.getKey().getValue() / 10 + bishop2.getKey().getValue() % 10;
+            return pos1Sum % 2 == pos2Sum % 2;
+        }
+
+        return false;
+    }
+
+    private static int arraySum(int[] arr, int...exclude) {
+        int sum = 0;
+        for (int i=0;i<arr.length;i++)
+            if (!contains(exclude, i))
+                sum += arr[i];
+        return sum;
+    }
+
+    private static boolean contains(int[] exclude, int n) {
+        for (int a : exclude)
+            if (a == n)
+                return true;
+        return false;
+    }
+
+    /**
+     * Should only be called by drawByInsufficientMaterial
+     * @param p
+     * @return
+     */
+    private static int pieceToIndex(Piece p) {
+        if (p instanceof Queen)
+            return 0;
+        else if (p instanceof Rook)
+            return 1;
+        else if (p instanceof Bishop)
+            return 2;
+        else if (p instanceof Knight)
+            return 3;
+        else if (p instanceof Pawn)
+            return 4;
+        return -1;
     }
 
     private static boolean isJumpingOverPieces(POS startPos, POS endPos, ChessBoard board) {

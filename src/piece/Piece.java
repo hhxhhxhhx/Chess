@@ -29,7 +29,7 @@ public abstract class Piece {
         this.white = white;
         this.pieceName = pieceName;
         ImageView imv = new ImageView();
-        imv.setImage(new Image("images/" + (white ? "W" : "B") + Character.toString(pieceName) + ".png"));
+        imv.setImage(new Image("images/" + (white ? "W" : "B") + pieceName + ".png"));
         imv.setFitWidth(75);
         imv.setFitHeight(75);
         sprite = imv;
@@ -46,7 +46,7 @@ public abstract class Piece {
     }
 
     public boolean isWhite() {return white;}
-    public boolean isBlack() {return !white;};
+    public boolean isBlack() {return !white;}
 
     public boolean isKing() {return pieceName == 'K';}
     public boolean isKnight() {return pieceName == 'N';}
@@ -74,7 +74,7 @@ public abstract class Piece {
 
     public Node copySprite() {
         ImageView imv = new ImageView();
-        imv.setImage(new Image("images/" + (white ? "W" : "B") + Character.toString(pieceName) + ".png"));
+        imv.setImage(new Image("images/" + (white ? "W" : "B") + pieceName + ".png"));
         imv.setFitWidth(75);
         imv.setFitHeight(75);
         return imv;
@@ -86,6 +86,8 @@ public abstract class Piece {
     public static ArrayList<Pair<POS, Piece>> getStandardGamePieces() {
         ArrayList<Pair<POS, Piece>> pieces = new ArrayList<>();
 
+        for (int i=10; i<18; i++)
+            pieces.add(new Pair<>(new POS(i), new Pawn(false)));
         pieces.add(new Pair<>(new POS("a8"), new Rook(false, 1)));
         pieces.add(new Pair<>(new POS("h8"), new Rook(false, 2)));
         pieces.add(new Pair<>(new POS("b8"), new Knight(false)));
@@ -94,9 +96,9 @@ public abstract class Piece {
         pieces.add(new Pair<>(new POS("f8"), new Bishop(false)));
         pieces.add(new Pair<>(new POS("d8"), new Queen(false)));
         pieces.add(new Pair<>(new POS("e8"), new King(false)));
-        for (int i=10; i<18; i++)
-            pieces.add(new Pair<>(new POS(i), new Pawn(false)));
 
+        for (int i=60; i<68; i++)
+            pieces.add(new Pair<>(new POS(i), new Pawn(true)));
         pieces.add(new Pair<>(new POS("a1"), new Rook(true, 1)));
         pieces.add(new Pair<>(new POS("h1"), new Rook(true, 2)));
         pieces.add(new Pair<>(new POS("b1"), new Knight(true)));
@@ -105,8 +107,7 @@ public abstract class Piece {
         pieces.add(new Pair<>(new POS("f1"), new Bishop(true)));
         pieces.add(new Pair<>(new POS("d1"), new Queen(true)));
         pieces.add(new Pair<>(new POS("e1"), new King(true)));
-        for (int i=60; i<68; i++)
-            pieces.add(new Pair<>(new POS(i), new Pawn(true)));
+
         return pieces;
     }
 }
