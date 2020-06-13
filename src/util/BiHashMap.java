@@ -5,10 +5,11 @@ import javafx.util.Pair;
 import java.util.HashMap;
 import java.util.Set;
 
+@SuppressWarnings("unused")
 public class BiHashMap<K, V> {
 
-    private HashMap<K, V> forward = new HashMap<>();
-    private HashMap<V, K> reverse = new HashMap<>();
+    private final HashMap<K, V> forward = new HashMap<>();
+    private final HashMap<V, K> reverse = new HashMap<>();
 
     public synchronized void add(Pair<K, V> pair) {
         add(pair.getKey(), pair.getValue());
@@ -77,7 +78,7 @@ public class BiHashMap<K, V> {
      * @return a cloned BiHashMap
      */
     @Override
-    public BiHashMap clone() {
+    public BiHashMap<K, V> clone() {
         BiHashMap<K, V> bhm = new BiHashMap<>();
         for (K key : keySet()) {
             bhm.add(key, getForward(key));

@@ -23,6 +23,7 @@ public class Parser {
                 Object[] arr;
                 try {
                     String reformat = reformat(split[start], cb, true, "Pf9f9");
+                    assert reformat != null;
                     POS startClickPos = new POS(reformat.substring(0, 2));
                     POS endClickPos = new POS(reformat.substring(2, 4));
                     Piece piece = cb.getPiece(startClickPos);

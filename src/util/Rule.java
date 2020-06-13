@@ -16,9 +16,9 @@ public final class Rule {
      * If invalid move, it'll simply be a length 1 array of {false}
      * Index 3 (added piece) may be null
      *
-     * @param piece
-     * @param endPos
-     * @param board
+     * @param piece piece to move
+     * @param endPos endPos
+     * @param board chessBoard
      * @return length of 1 or 4 array
      */
     public static Object[] isValidMove(Piece piece, POS endPos, ChessBoard board, String lastMove, boolean...verbose) {
@@ -28,6 +28,7 @@ public final class Rule {
             return __isValidMoveWithCheckCheck__(piece, endPos, board, lastMove, true, verbose[0]);
     }
 
+    @SuppressWarnings("unchecked")
     private static Object[] __isValidMoveWithCheckCheck__(Piece piece, POS endPos, ChessBoard board, String lastMove, boolean checkChecks, boolean verbose) {
         //Check if valid (return new Object[]{false};) if not
         if (board.containsPiece(endPos) && board.getPiece(endPos).isWhite() == piece.isWhite()) {
@@ -42,7 +43,6 @@ public final class Rule {
 
         Pair<Piece, POS>[] movingPieces = new Pair[2];
         Pair<Piece, POS>[] removedPieces = new Pair[2];
-        Pair<Piece, POS> addedPiece = null;
 
         POS startPos = board.getPosition(piece);
         if (piece instanceof Knight) {
@@ -52,19 +52,19 @@ public final class Rule {
             }
         }
         if (piece instanceof Bishop) {
-            if (!POS.isDiagonal(startPos, endPos)) {
+            if (POS.notSameDiagonal(startPos, endPos)) {
                 if (verbose) System.out.println("From Rule: Bishop not moving in diagonal");
                 return new Object[]{false};
             }
         }
         if (piece instanceof Rook) {
-            if (!POS.isLine(startPos, endPos)) {
+            if (POS.notInLine(startPos, endPos)) {
                 if (verbose) System.out.println("From Rule: Rook not moving in a straight line");
                 return new Object[]{false};
             }
         }
         if (piece instanceof Queen) {
-            if (!POS.isLine(startPos, endPos) && !POS.isDiagonal(startPos, endPos)) {
+            if (POS.notInLine(startPos, endPos) && POS.notSameDiagonal(startPos, endPos)) {
                 if (verbose) System.out.println("From Rule: Queen not moving in a straight line nor diagonal");
                 return new Object[]{false};
             }
@@ -72,18 +72,18 @@ public final class Rule {
         if (piece instanceof Pawn) {
             if (isClose(POS.distance(startPos, endPos), 2)) {
                 if (piece.isWhite()) {
-                    if (startPos.getRank() != 2 || !POS.inSameFile(startPos, endPos) || endPos.getRank() != 4 || board.getPiece(endPos) != null) {
+                    if (startPos.getRank() != 2 || POS.notSameFile(startPos, endPos) || endPos.getRank() != 4 || board.getPiece(endPos) != null) {
                         if (verbose) System.out.println("From Rule: Pawn moving distance of 2 not valid!");
                         return new Object[]{false};
                     }
                 } else if (piece.isBlack()) {
-                    if (startPos.getRank() != 7 || !POS.inSameFile(startPos, endPos) || endPos.getRank() != 5 || board.getPiece(endPos) != null) {
+                    if (startPos.getRank() != 7 || POS.notSameFile(startPos, endPos) || endPos.getRank() != 5 || board.getPiece(endPos) != null) {
                         if (verbose) System.out.println("From Rule: Pawn moving distance of 2 not valid!");
                         return new Object[]{false};
                     }
                 }
             } else if (isClose(POS.distance(startPos, endPos), 1)) {
-                if (!POS.inSameFile(startPos, endPos) || board.getPiece(endPos) != null) {
+                if (POS.notSameFile(startPos, endPos) || board.getPiece(endPos) != null) {
                     if (verbose) System.out.println("From Rule: Pawn moving distance of 1 not valid!");
                     return new Object[]{false};
                 }
@@ -210,7 +210,7 @@ public final class Rule {
             removedPieces[0] = new Pair<>(board.getPiece(endPos), endPos);
         }
 
-        ChessBoard hypotheticalPosition = board.createTemporaryChange(movingPieces, removedPieces, addedPiece);
+        ChessBoard hypotheticalPosition = board.createTemporaryChange(movingPieces, removedPieces, null);
         if (checkChecks && isSquareTargetableByOpponent(!piece.isWhite(), hypotheticalPosition,
                 piece.symbol()+hypotheticalPosition.getPosition(piece)+endPos, hypotheticalPosition.getPositionOfKing(piece.isWhite()))) {
             //Check if committing change will allow enemy to be checking you right now.
@@ -218,7 +218,7 @@ public final class Rule {
             return new Object[]{false};
         }
 
-        return new Object[]{true, movingPieces, removedPieces, addedPiece};
+        return new Object[]{true, movingPieces, removedPieces, null};
     }
 
     private static boolean isSquareTargetableByOpponent(boolean opponent, ChessBoard board, String lastMove, POS...squares) {
@@ -291,6 +291,8 @@ public final class Rule {
                 else if (pair.getValue().isBishop())
                     bishop2 = pair;
             }
+            assert bishop1 != null;
+            assert bishop2 != null;
             int pos1Sum = bishop1.getKey().getValue() / 10 + bishop1.getKey().getValue() % 10;
             int pos2Sum = bishop2.getKey().getValue() / 10 + bishop2.getKey().getValue() % 10;
             return pos1Sum % 2 == pos2Sum % 2;
@@ -314,11 +316,6 @@ public final class Rule {
         return false;
     }
 
-    /**
-     * Should only be called by drawByInsufficientMaterial
-     * @param p
-     * @return
-     */
     private static int pieceToIndex(Piece p) {
         if (p instanceof Queen)
             return 0;

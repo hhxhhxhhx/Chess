@@ -52,22 +52,20 @@ public class POS {
     public String toString() {
         char letter = (char)(value % 10 + 'a');
         int num = 8 - value / 10;
-        StringBuilder sb = new StringBuilder();
-        sb.append(letter);
-        sb.append(num);
-        return sb.toString();
+        return String.valueOf(letter) + num;
     }
 
     public int getValue() {
         return value;
     }
 
+    @SuppressWarnings("all")
     public static double distance(POS a, POS b) {
         return Math.hypot(a.value % 10 - b.value % 10, a.value / 10 - b.value / 10);
     }
 
-    public static boolean isDiagonal(POS a, POS b) {
-        return Math.abs(a.value % 10 - b.value % 10) == Math.abs(a.value / 10 - b.value / 10);
+    public static boolean notSameDiagonal(POS a, POS b) {
+        return Math.abs(a.value % 10 - b.value % 10) != Math.abs(a.value / 10 - b.value / 10);
     }
 
     public char getFile() {
@@ -78,16 +76,16 @@ public class POS {
         return 8 - value / 10;
     }
 
-    public static boolean inSameFile(POS a, POS b) {
-        return a.value % 10 == b.value % 10;
+    public static boolean notSameFile(POS a, POS b) {
+        return a.value % 10 != b.value % 10;
     }
 
-    public static boolean isLine(POS a, POS b) {
-        return (!a.equals(b) && (a.value % 10 - b.value % 10 == 0 || a.value / 10 - b.value / 10 == 0));
+    public static boolean notInLine(POS a, POS b) {
+        return (a.equals(b) || (a.value % 10 - b.value % 10 != 0 && a.value / 10 - b.value / 10 != 0));
     }
 
     public static ArrayList<POS> between(POS a, POS b) {
-        if (!isDiagonal(a, b) && !isLine(a, b)) {
+        if (notSameDiagonal(a, b) && notInLine(a, b)) {
             throw new RuntimeException(a + " and " + b + " are not in a straight line or diagonal!");
         } else {
             ArrayList<POS> points = new ArrayList<>();
@@ -106,7 +104,7 @@ public class POS {
 
     @Override
     public boolean equals(Object o) {
-        return ((POS)o).value == this.value;
+        return o instanceof POS && ((POS)o).value == this.value;
     }
 
     @Override

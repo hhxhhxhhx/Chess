@@ -3,6 +3,7 @@ package game;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -11,7 +12,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -23,17 +23,20 @@ import piece.*;
 import util.*;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
+/*
+FIXME: Rewrite the entire Game class!
+ */
 public class Game extends Application {
 
-    private ArrayList<String> gameMoves = new ArrayList<>();
+    private final ArrayList<String> gameMoves = new ArrayList<>();
 
-    private Pane pane = new Pane();
+    private final Pane pane = new Pane();
     private StackPane[] boardSquare;
-    private StackPane[] boardLabels;
 
     private Scene scene;
-    private Stage stage;
 
     private ChessBoard board;
 
@@ -42,7 +45,7 @@ public class Game extends Application {
 
     private boolean white = true;
 
-    private ArrayList<Node> temporaryNodes = new ArrayList<>();
+    private final ArrayList<Node> temporaryNodes = new ArrayList<>();
 
     private Pair<Node, POS> temporaryRemovedNode = null;
 
@@ -50,22 +53,28 @@ public class Game extends Application {
 
     private POS pieceInCheckPos = null;
 
-    private TextField inputField = new TextField();
+    //private TextField inputField = new TextField();
 
-    private Button replayPosition = new Button("Replay Position");
-    private Button draw = new Button("Draw the Game");
-    private Button newGame = new Button("New Game");
-    private Button loadPosition = new Button("Load Position");
+    private final Button replayPosition = new Button("Replay Position");
+    private final Button draw = new Button("Draw the Game");
+    private final Button newGame = new Button("New Game");
+    private final Button loadPosition = new Button("Load Position");
+    private Button blackBot;
+    private Button whiteBot;
 
-    private int gameToLoad = 600;
     private int loadIndex = 0;
+
+    private boolean botPlayingWhite = false;
+    private boolean botPlayingBlack = false;
+
+    private boolean playable = true;
 
     @Override
     public void start(Stage primaryStage) {
 
         initButtons();
 
-        boardLabels = new StackPane[16];
+        StackPane[] boardLabels = new StackPane[16];
         for (int i=0;i<8;i++) {
             StackPane sp = new StackPane();
             sp.setMinSize(30, 75);
@@ -111,9 +120,10 @@ public class Game extends Application {
 
         scene = new Scene(pane, 750, 750);
         initSceneHandler();
-        stage = primaryStage;
-        stage.setScene(scene);
-        stage.show();
+        primaryStage.setScene(scene);
+        primaryStage.show();
+
+        //System.out.println(MoveSuggestor.suggestMove(gameMoves));
     }
 
     private void initButtons() {
@@ -124,6 +134,11 @@ public class Game extends Application {
             scene.setOnMouseDragged(ef -> {});
             scene.setOnMouseMoved(ef -> {});
             scene.setOnMouseReleased(ef -> {});
+            if (whiteBot.getText().equals("Human play white"))
+                whiteBot.fire();
+            if (blackBot.getText().equals("Human play black"))
+                blackBot.fire();
+            playable = false;
             SaveGame.save(gameMoves);
         });
         draw.setLayoutX(275);
@@ -140,6 +155,7 @@ public class Game extends Application {
             updateStackPanes();
             gameMoves.clear();
             initSceneHandler();
+            playable = true;
         });
         newGame.setLayoutX(575);
         newGame.setLayoutY(710);
@@ -203,6 +219,34 @@ public class Game extends Application {
         replayPosition.setLayoutX(75);
         replayPosition.setLayoutY(710);
         replayPosition.setFont(new Font(20));
+        
+        whiteBot = new Button("Make bot play white");
+        whiteBot.setOnAction(e -> {
+            if (whiteBot.getText().equals("Make bot play white")) {
+                whiteBot.setText("Human play white");
+                botPlayingWhite = true;
+                if (white) {
+                    attemptMove(MoveSuggester.suggestMove(board.toFEN(white, lastMove)).get("Move"));
+                }
+            } else {
+                whiteBot.setText("Make bot play white");
+                botPlayingWhite = false;
+            }
+        });
+
+        blackBot = new Button("Make bot play black");
+        blackBot.setOnAction(e -> {
+            if (blackBot.getText().equals("Make bot play black")) {
+                blackBot.setText("Human play black");
+                botPlayingBlack = true;
+                if (!white) {
+                    attemptMove(MoveSuggester.suggestMove(board.toFEN(white, lastMove)).get("Move"));
+                }
+            } else {
+                blackBot.setText("Make bot play black");
+                botPlayingBlack = false;
+            }
+        });
 
         HBox hb = new HBox();
         hb.getChildren().addAll(loadPosition, replayPosition, draw, newGame);
@@ -211,7 +255,16 @@ public class Game extends Application {
         hb.setLayoutX(0);
         hb.setLayoutY(25);
         hb.setMinWidth(750);
-        pane.getChildren().add(hb);
+
+        HBox makeBotPlay = new HBox();
+        makeBotPlay.getChildren().addAll(whiteBot, blackBot);
+        makeBotPlay.setSpacing(15);
+        makeBotPlay.setAlignment(Pos.CENTER);
+        makeBotPlay.setLayoutX(0);
+        makeBotPlay.setLayoutY(700);
+        makeBotPlay.setMinWidth(750);
+
+        pane.getChildren().addAll(hb, makeBotPlay);
     }
 
     private void loadPositionHelperFunc(String str) {
@@ -335,6 +388,8 @@ public class Game extends Application {
     }
 
     public void attemptMove(String...command) {
+        if (!playable)
+            return;
         try {
             POS startClickPos;
             if (command.length == 0)
@@ -349,7 +404,6 @@ public class Game extends Application {
             if (startClickPos.equals(endClickPos)) {
                 System.out.println("Nullified 2 clicks on " + startClickPos + " and " + endClickPos);
             } else {
-
                 Piece movingPiece = board.getPiece(startClickPos);
                 Object[] ruleCheck = Rule.isValidMove(movingPiece, endClickPos, board, lastMove);
                 if ((boolean) ruleCheck[0]) {
@@ -359,7 +413,11 @@ public class Game extends Application {
                     Pair<Piece, POS>[] removedPieces = (Pair<Piece, POS>[]) ruleCheck[2];
                     Pair<Piece, POS> addedPiece = (Pair<Piece, POS>) ruleCheck[3];
 
-                    commitChanges(removedPieces, movingDirections, addedPiece);
+                    //TODO remove if statement but keep the code inside
+                    if (!(movingPiece.isWhite() && movingPiece.isPawn() && endClickPos.getRank() == 8 ||
+                            movingPiece.isBlack() && movingPiece.isPawn() && endClickPos.getRank() == 1)) {
+                        commitChanges(removedPieces, movingDirections, addedPiece);
+                    }
                     //Promotion
                     if (movingPiece.isWhite() && movingPiece.isPawn() && endClickPos.getRank() == 8 ||
                             movingPiece.isBlack() && movingPiece.isPawn() && endClickPos.getRank() == 1) {
@@ -384,8 +442,16 @@ public class Game extends Application {
                                     addPiece = new Pair<>(new Knight(movingPiece.isWhite()), endClickPos);
                                 }
                             } catch (Exception e) {
-                                System.out.println("defaulted to making queen");
-                                addPiece = new Pair<>(new Queen(movingPiece.isWhite()), endClickPos);
+                                char c = command[0].charAt(4);
+                                if (c == 'q') {
+                                    addPiece = new Pair<>(new Queen(movingPiece.isWhite()), endClickPos);
+                                } else if (c == 'r') {
+                                    addPiece = new Pair<>(new Rook(movingPiece.isWhite(), 0), endClickPos);
+                                } else if (c == 'b') {
+                                    addPiece = new Pair<>(new Bishop(movingPiece.isWhite()), endClickPos);
+                                } else {
+                                    addPiece = new Pair<>(new Knight(movingPiece.isWhite()), endClickPos);
+                                }
                             }
                             commitChanges(removedPieces, movingDirections, addPiece);
                         } else {
@@ -434,7 +500,6 @@ public class Game extends Application {
                             popup.show();
                         }
                     }
-
                 } else {
                     System.out.println("Illegal move!");
                 }
@@ -462,6 +527,8 @@ public class Game extends Application {
         }
         if (addedPiece != null) {
             board.addPiece(addedPiece);
+            //TODO to be changed when above todo is removed
+            //gameMoves.remove(gameMoves.size()-1);
             lastMove += "=" + addedPiece.getKey().symbol();
         }
 
@@ -477,37 +544,52 @@ public class Game extends Application {
             scene.setOnMouseDragged(e -> {});
             scene.setOnMouseMoved(e -> {});
             scene.setOnMouseReleased(e -> {});
+            playable = false;
+            if (whiteBot.getText().equals("Human play white"))
+                whiteBot.fire();
+            if (blackBot.getText().equals("Human play black"))
+                blackBot.fire();
             SaveGame.save(gameMoves);
         } else if (Rule.isInCheck(true, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(true);
             if (Rule.hasValidMove(true, lastMove, board)) {
-                gameMoves.add(replaceCastleMoves(lastMove) + "+");
+                gameMoves.add(lastMove + "+");
             } else {
                 System.out.println("White is checkmated!");
-                gameMoves.add(replaceCastleMoves(lastMove) + "#");
+                gameMoves.add(lastMove + "#");
                 gameMoves.add("0-1");
                 scene.setOnMousePressed(e -> {});
                 scene.setOnMouseDragged(e -> {});
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
+                playable = false;
+                if (whiteBot.getText().equals("Human play white"))
+                    whiteBot.fire();
+                if (blackBot.getText().equals("Human play black"))
+                    blackBot.fire();
                 SaveGame.save(gameMoves);
             }
         } else if (Rule.isInCheck(false, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(false);
             if (Rule.hasValidMove(false, lastMove, board)) {
-                gameMoves.add(replaceCastleMoves(lastMove) + "+");
+                gameMoves.add(lastMove + "+");
             } else {
                 System.out.println("Black is checkmated!");
-                gameMoves.add(replaceCastleMoves(lastMove) + "#");
+                gameMoves.add(lastMove + "#");
                 gameMoves.add("1-0");
                 scene.setOnMousePressed(e -> {});
                 scene.setOnMouseDragged(e -> {});
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
+                playable = false;
+                if (whiteBot.getText().equals("Human play white"))
+                    whiteBot.fire();
+                if (blackBot.getText().equals("Human play black"))
+                    blackBot.fire();
                 SaveGame.save(gameMoves);
             }
         } else {
-            gameMoves.add(replaceCastleMoves(lastMove));
+            gameMoves.add(lastMove);
             if (!Rule.hasValidMove(white, lastMove, board)) {
                 //Stalemate
                 System.out.println("Stalemate!");
@@ -516,10 +598,34 @@ public class Game extends Application {
                 scene.setOnMouseDragged(e -> {});
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
+                playable = false;
+                if (whiteBot.getText().equals("Human play white"))
+                    whiteBot.fire();
+                if (blackBot.getText().equals("Human play black"))
+                    blackBot.fire();
                 SaveGame.save(gameMoves);
             }
         }
         updateClickedPane();
+
+        if (playable) {
+            if (white && botPlayingWhite || !white && botPlayingBlack) {
+                TimerTask tk = new TimerTask() {
+                    @Override
+                    public void run() {
+                        Platform.runLater(() -> attemptMove(MoveSuggester.suggestMove(board.toFEN(white, lastMove)).get("Move")));
+                    }
+                };
+                new Timer().schedule(tk, 100);
+            }
+            TimerTask tk = new TimerTask() {
+                @Override
+                public void run() {
+                    Platform.runLater(() -> System.out.println(MoveSuggester.suggestMove(board.toFEN(white, lastMove))));
+                }
+            };
+            new Timer().schedule(tk, 100);
+        }
     }
 
     private POS posFromClick(Pair<Double, Double> clickPos) {
@@ -539,14 +645,6 @@ public class Game extends Application {
                 boardSquare[pos.getKey().getValue()].getChildren().clear();
             }
         });
-    }
-
-    private String replaceCastleMoves(String str) {
-        str = str.replaceAll("Ke1g1", "O-O");
-        str = str.replaceAll("Ke1c1", "O-O-O");
-        str = str.replaceAll("Ke8g8", "O-O");
-        str = str.replaceAll("Ke8c8", "O-O-O");
-        return str;
     }
 
     public static void main(String[] args) {

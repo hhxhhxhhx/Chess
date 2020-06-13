@@ -112,6 +112,59 @@ public class ChessBoard {
     public boolean containsPiece(POS pos) {
         return board.containsKey(pos);
     }
+    public String toFEN(boolean white, String lastMove) {
+        StringBuilder sb = new StringBuilder();
+        int skips = 0;
+        for (int i=0;i<8;i++) {
+            for (int j = 0; j < 8; j++) {
+                Piece p = board.getForward(new POS(i * 10 + j));
+                if (p == null) {
+                    skips++;
+                    continue;
+                }
+                if (skips != 0) {
+                    sb.append(skips);
+                    skips = 0;
+                }
+                if (p.isWhite()) {
+                    sb.append(p.symbol());
+                } else {
+                    sb.append(p.symbol().toLowerCase());
+                }
+            }
+            if (skips != 0) {
+                sb.append(skips);
+                skips = 0;
+            }
+            if (i != 7)
+                sb.append("/");
+        }
+        if (white)
+            sb.append(" w ");
+        else
+            sb.append(" b ");
+        if (canCastleKing(true))
+            sb.append('K');
+        if (canCastleQueen(true))
+            sb.append('Q');
+        if (canCastleKing(false))
+            sb.append('k');
+        if (canCastleQueen(false))
+            sb.append('q');
+        if (!(canCastleKing(true) || canCastleKing(false) || canCastleQueen(true) || canCastleQueen(false)))
+            sb.append('-');
+        sb.append(' ');
+        if (lastMove == null)
+            sb.append('-');
+        else if (lastMove.charAt(0) == 'P' && lastMove.charAt(2) == '2' && lastMove.charAt(4) == '4')
+            sb.append(lastMove.charAt(3)).append('3');
+        else if (lastMove.charAt(0) == 'P' && lastMove.charAt(2) == '7' && lastMove.charAt(4) == '5')
+            sb.append(lastMove.charAt(3)).append('6');
+        else
+            sb.append('-');
+
+        return sb.toString();
+    }
     public ArrayList<Pair<POS, Piece>> getAllPieces() {
         ArrayList<Pair<POS, Piece>> pieces = new ArrayList<>();
         board.keySet().forEach(e -> pieces.add(new Pair<>(e, board.getForward(e))));
