@@ -83,7 +83,9 @@ public final class Rule {
                     }
                 }
             } else if (isClose(POS.distance(startPos, endPos), 1)) {
-                if (POS.notSameFile(startPos, endPos) || board.getPiece(endPos) != null) {
+                if (POS.notSameFile(startPos, endPos) || board.getPiece(endPos) != null ||
+                    piece.isWhite() && endPos.getRank() < startPos.getRank() ||
+                    piece.isBlack() && endPos.getRank() > startPos.getRank()) {
                     if (verbose) System.out.println("From Rule: Pawn moving distance of 1 not valid!");
                     return new Object[]{false};
                 }

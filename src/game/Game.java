@@ -621,7 +621,7 @@ public class Game extends Application {
             TimerTask tk = new TimerTask() {
                 @Override
                 public void run() {
-                    Platform.runLater(() -> System.out.println(MoveSuggester.suggestMove(board.toFEN(white, lastMove))));
+                    System.out.println(MoveSuggester.suggestMove(board.toFEN(white, lastMove)));
                 }
             };
             new Timer().schedule(tk, 100);
