@@ -26,9 +26,6 @@ import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 
-/*
-FIXME: Rewrite the entire Game class!
- */
 public class Game extends Application {
 
     private final ArrayList<String> gameMoves = new ArrayList<>();
@@ -139,7 +136,7 @@ public class Game extends Application {
             if (blackBot.getText().equals("Human play black"))
                 blackBot.fire();
             playable = false;
-            SaveGame.save(gameMoves);
+            //SaveGame.save(gameMoves);
         });
         draw.setLayoutX(275);
         draw.setLayoutY(710);
@@ -233,6 +230,7 @@ public class Game extends Application {
                 botPlayingWhite = false;
             }
         });
+        whiteBot.setVisible(false);
 
         blackBot = new Button("Make bot play black");
         blackBot.setOnAction(e -> {
@@ -247,6 +245,7 @@ public class Game extends Application {
                 botPlayingBlack = false;
             }
         });
+        blackBot.setVisible(false);
 
         HBox hb = new HBox();
         hb.getChildren().addAll(loadPosition, replayPosition, draw, newGame);
@@ -549,7 +548,7 @@ public class Game extends Application {
                 whiteBot.fire();
             if (blackBot.getText().equals("Human play black"))
                 blackBot.fire();
-            SaveGame.save(gameMoves);
+            //SaveGame.save(gameMoves);
         } else if (Rule.isInCheck(true, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(true);
             if (Rule.hasValidMove(true, lastMove, board)) {
@@ -567,7 +566,7 @@ public class Game extends Application {
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
-                SaveGame.save(gameMoves);
+                //SaveGame.save(gameMoves);
             }
         } else if (Rule.isInCheck(false, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(false);
@@ -586,7 +585,7 @@ public class Game extends Application {
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
-                SaveGame.save(gameMoves);
+                //SaveGame.save(gameMoves);
             }
         } else {
             gameMoves.add(lastMove);
@@ -603,11 +602,12 @@ public class Game extends Application {
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
-                SaveGame.save(gameMoves);
+                //SaveGame.save(gameMoves);
             }
         }
         updateClickedPane();
 
+        /*
         if (playable) {
             if (white && botPlayingWhite || !white && botPlayingBlack) {
                 TimerTask tk = new TimerTask() {
@@ -621,11 +621,12 @@ public class Game extends Application {
             TimerTask tk = new TimerTask() {
                 @Override
                 public void run() {
-                    System.out.println(MoveSuggester.suggestMove(board.toFEN(white, lastMove)));
+                   System.out.print ln(MoveSuggester.suggestMove(board.toFEN(white, lastMove)));
                 }
             };
             new Timer().schedule(tk, 100);
         }
+         */
     }
 
     private POS posFromClick(Pair<Double, Double> clickPos) {
