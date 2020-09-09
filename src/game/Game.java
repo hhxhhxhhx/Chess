@@ -34,6 +34,7 @@ public class Game extends Application {
     private StackPane[] boardSquare;
 
     private Scene scene;
+    private Stage primaryStage;
 
     private ChessBoard board;
 
@@ -68,6 +69,8 @@ public class Game extends Application {
 
     @Override
     public void start(Stage primaryStage) {
+
+        this.primaryStage = primaryStage;
 
         initButtons();
 
@@ -126,6 +129,7 @@ public class Game extends Application {
     private void initButtons() {
         draw.setOnAction(e -> {
             System.out.println("Game ended in a draw by pressing the draw button!");
+            gameEndPopup("Game ended in a draw by pressing the draw button!");
             gameMoves.add("1/2-1/2");
             scene.setOnMousePressed(ef -> {});
             scene.setOnMouseDragged(ef -> {});
@@ -540,6 +544,7 @@ public class Game extends Application {
         //Game end checking
         if (Rule.drawByInsufficientMaterial(board)) {
             System.out.println("Draw by Insufficient Material!");
+            gameEndPopup("Draw by Insufficient Material!");
             gameMoves.add("1/2-1/2");
             scene.setOnMousePressed(e -> {});
             scene.setOnMouseDragged(e -> {});
@@ -559,6 +564,7 @@ public class Game extends Application {
                 gameMoves.add(lastMove + "+");
             } else {
                 System.out.println("White is checkmated!");
+                gameEndPopup("White is checkmated!");
                 gameMoves.add(lastMove + "#");
                 gameMoves.add("0-1");
                 scene.setOnMousePressed(e -> {});
@@ -580,6 +586,7 @@ public class Game extends Application {
                 gameMoves.add(lastMove + "+");
             } else {
                 System.out.println("Black is checkmated!");
+                gameEndPopup("Black is checkmated!");
                 gameMoves.add(lastMove + "#");
                 gameMoves.add("1-0");
                 scene.setOnMousePressed(e -> {});
@@ -600,6 +607,7 @@ public class Game extends Application {
             if (!Rule.hasValidMove(white, lastMove, board)) {
                 //Stalemate
                 System.out.println("Stalemate!");
+                gameEndPopup("Stalemate!");
                 gameMoves.add("1/2-1/2");
                 scene.setOnMousePressed(e -> {});
                 scene.setOnMouseDragged(e -> {});
@@ -637,6 +645,19 @@ public class Game extends Application {
             new Timer().schedule(tk, 100);
         }
          */
+    }
+
+    private void gameEndPopup(String msg) {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initOwner(primaryStage);
+        StackPane sp = new StackPane();
+        Label lb = new Label(msg);
+        lb.setFont(new Font(16));
+        sp.getChildren().addAll(lb);
+        Scene temp = new Scene(sp, 400, 200);
+        stage.setScene(temp);
+        stage.show();
     }
 
     private POS posFromClick(Pair<Double, Double> clickPos) {
