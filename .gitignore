@@ -1,0 +1,10 @@
+
+.idea/
+out/
+*.iml
+
+src/util/games.pgn
+src/util/python.py
+src/util/stockfish
+src/util/SaveGame.java
+src/util/MoveSuggester.java

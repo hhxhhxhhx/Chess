@@ -56,13 +56,13 @@ public class Game extends Application {
     private final Button draw = new Button("Draw the Game");
     private final Button newGame = new Button("New Game");
     private final Button loadPosition = new Button("Load Position");
-    private Button blackBot;
-    private Button whiteBot;
+    //private Button blackBot;
+    //private Button whiteBot;
 
     private int loadIndex = 0;
 
-    private boolean botPlayingWhite = false;
-    private boolean botPlayingBlack = false;
+    //private boolean botPlayingWhite = false;
+    //private boolean botPlayingBlack = false;
 
     private boolean playable = true;
 
@@ -131,10 +131,12 @@ public class Game extends Application {
             scene.setOnMouseDragged(ef -> {});
             scene.setOnMouseMoved(ef -> {});
             scene.setOnMouseReleased(ef -> {});
+            /*
             if (whiteBot.getText().equals("Human play white"))
                 whiteBot.fire();
             if (blackBot.getText().equals("Human play black"))
                 blackBot.fire();
+            */
             playable = false;
             //SaveGame.save(gameMoves);
         });
@@ -216,7 +218,7 @@ public class Game extends Application {
         replayPosition.setLayoutX(75);
         replayPosition.setLayoutY(710);
         replayPosition.setFont(new Font(20));
-        
+        /*
         whiteBot = new Button("Make bot play white");
         whiteBot.setOnAction(e -> {
             if (whiteBot.getText().equals("Make bot play white")) {
@@ -230,7 +232,6 @@ public class Game extends Application {
                 botPlayingWhite = false;
             }
         });
-        whiteBot.setVisible(false);
 
         blackBot = new Button("Make bot play black");
         blackBot.setOnAction(e -> {
@@ -245,7 +246,7 @@ public class Game extends Application {
                 botPlayingBlack = false;
             }
         });
-        blackBot.setVisible(false);
+         */
 
         HBox hb = new HBox();
         hb.getChildren().addAll(loadPosition, replayPosition, draw, newGame);
@@ -254,7 +255,7 @@ public class Game extends Application {
         hb.setLayoutX(0);
         hb.setLayoutY(25);
         hb.setMinWidth(750);
-
+        /*
         HBox makeBotPlay = new HBox();
         makeBotPlay.getChildren().addAll(whiteBot, blackBot);
         makeBotPlay.setSpacing(15);
@@ -262,8 +263,9 @@ public class Game extends Application {
         makeBotPlay.setLayoutX(0);
         makeBotPlay.setLayoutY(700);
         makeBotPlay.setMinWidth(750);
-
         pane.getChildren().addAll(hb, makeBotPlay);
+         */
+        pane.getChildren().add(hb);
     }
 
     private void loadPositionHelperFunc(String str) {
@@ -544,10 +546,12 @@ public class Game extends Application {
             scene.setOnMouseMoved(e -> {});
             scene.setOnMouseReleased(e -> {});
             playable = false;
+            /*
             if (whiteBot.getText().equals("Human play white"))
                 whiteBot.fire();
             if (blackBot.getText().equals("Human play black"))
                 blackBot.fire();
+             */
             //SaveGame.save(gameMoves);
         } else if (Rule.isInCheck(true, lastMove, board)) {
             pieceInCheckPos = board.getPositionOfKing(true);
@@ -562,10 +566,12 @@ public class Game extends Application {
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
                 playable = false;
+                /*
                 if (whiteBot.getText().equals("Human play white"))
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
+                 */
                 //SaveGame.save(gameMoves);
             }
         } else if (Rule.isInCheck(false, lastMove, board)) {
@@ -581,10 +587,12 @@ public class Game extends Application {
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
                 playable = false;
+                /*
                 if (whiteBot.getText().equals("Human play white"))
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
+                 */
                 //SaveGame.save(gameMoves);
             }
         } else {
@@ -598,10 +606,12 @@ public class Game extends Application {
                 scene.setOnMouseMoved(e -> {});
                 scene.setOnMouseReleased(e -> {});
                 playable = false;
+                /*
                 if (whiteBot.getText().equals("Human play white"))
                     whiteBot.fire();
                 if (blackBot.getText().equals("Human play black"))
                     blackBot.fire();
+                 */
                 //SaveGame.save(gameMoves);
             }
         }
